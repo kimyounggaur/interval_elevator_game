@@ -150,3 +150,40 @@ a.stage-card:hover{border-color:var(--teal)}
   .page-shell{padding:14px 16px 24px}.home-page{padding-top:7px}.home-hero{padding-top:22px}.home-hero .eyebrow{font-size:10px;letter-spacing:.06em}.hero-description{font-size:13px;line-height:1.7}.mobile-break{display:inline}.street{gap:4px;padding-top:8px}.street-caption{font-size:10px;padding-top:10px;gap:7px}.journey-section{margin-top:27px}.page-shell .section-heading{gap:9px;margin-bottom:13px}.page-shell .section-heading h2{font-size:17px}.journey-section>.section-heading>.small-note{display:none}.stage-grid{gap:10px}.stage-card{padding:15px 13px 0;border-radius:10px}.stage-card-top{margin-bottom:13px}.stage-number{font-size:23px}.stage-star{font-size:10px}.stage-card h3{font-size:16px;min-height:43px;margin-bottom:7px}.stage-card>p{font-size:11px;margin-bottom:12px;line-height:1.6}.stage-card-bottom{min-height:42px;font-size:10px}.stage-card-bottom>span:last-child{font-size:15px}.explore-banner{padding:14px;gap:11px}.explore-banner strong{font-size:15px}.explore-banner small{font-size:11px}.explore-banner .explore-icon{width:37px;height:39px}.page-shell .sound-check{padding:14px;gap:9px}.sound-check>.button{padding:9px 11px}.sound-check h2{font-size:14px}.sound-check p{font-size:11px}.sound-check>.small-note{font-size:10px}.app-footer{display:grid;gap:4px;margin-top:23px;font-size:9px}.page-shell .page-top{margin-bottom:24px;padding-bottom:10px}.page-shell .page-title h1{font-size:29px}.page-shell .page-title>p:last-child{font-size:12px;line-height:1.7}.page-shell .panel{padding:18px}.stage-intro h1{font-size:27px}.stage-intro>.stage-number{font-size:49px}.stage-intro>p:not(.eyebrow):not(.stage-star){font-size:12px}.mission-card{gap:10px;padding:14px 12px}.mission-icon{width:34px;height:43px;font-size:22px}.mission-details h2{font-size:16px}.mission-details .eyebrow{font-size:9px}.mission-details .small-note{font-size:10px}.mission-card>.button{min-width:57px;padding:9px 8px;font-size:11px}.lock-label{min-width:57px;font-size:10px}.records-grid{grid-template-columns:minmax(0,1fr);gap:12px}.record-stage .section-heading h2{font-size:15px}.record-heading{font-size:12px}.page-shell .empty-state{display:grid;gap:14px;justify-items:start}.settings-section h2{font-size:19px}.settings-section .switch{gap:12px}.settings-section .switch small{font-size:10px}.settings-section .switch input{flex-shrink:0}.settings-section>p{font-size:12px}
 }
 @media(prefers-reduced-motion:reduce){.street-building,.settings-section .switch input::after{transition:none}a.street-building:hover{transform:none}.page-shell .button:not(:disabled):active{transform:none}}
+
+/* 동화책처럼 이어지는 음정 거리 */
+.home-hero{padding-top:20px}
+.home-hero h1{margin-bottom:8px}
+.home-hero .hero-description{margin-bottom:20px}
+.street{isolation:isolate;display:flex;flex-direction:column;justify-content:space-between;align-items:stretch;gap:0;width:min(100%,780px);min-height:420px;padding:20px;overflow:hidden;border:4px solid #eee1c0;border-radius:22px;background-color:#d9c099;background-image:linear-gradient(180deg,rgba(40,45,35,.12) 0%,transparent 38%,rgba(37,42,31,.56) 100%),url('/assets/impasto/01_music_street_background.webp');background-size:cover;background-position:center 50%;box-shadow:0 8px 24px #59432224,0 1px 0 #fff9 inset}
+.street::after{display:none}
+.street-sign{align-self:center;padding:7px 17px;border:1px solid #d2b775;border-radius:999px;background:#fff9e6ed;color:#63523d;box-shadow:0 2px 10px #40352336;font-size:10px;font-weight:800;letter-spacing:.16em}
+.street-choices{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px;align-items:stretch}
+.street-building{position:relative;display:flex;flex-direction:column;align-items:flex-start;justify-content:center;min-height:70px;padding:10px 12px;border:1px solid #e5cf95;border-radius:11px;background:#fff9e8ed;color:#2e463e;box-shadow:0 3px 12px #382a2033;text-align:left}
+.street-building-degree{font-family:var(--font-display);font-size:16px;font-weight:800}
+.street-building-label{font-size:11px;color:#5d6c5e}
+.street-building-arrow{position:absolute;right:11px;top:13px;color:#387d6d;font-size:17px}
+.street-building.future,.street-building.locked{background:#f1e9dce8;opacity:1;color:#6b665c}
+.street-building.future .street-building-label,.street-building.locked .street-building-label{color:#746e63}
+.street-caption{width:min(100%,780px);padding-inline:4px}
+.stage-card{border:1px solid color-mix(in srgb,var(--brass) 35%,var(--line));border-radius:15px;box-shadow:0 4px 14px #584a2712}
+.stage-card.current{box-shadow:0 4px 0 color-mix(in srgb,var(--teal) 14%,transparent),0 10px 24px #584a2714}
+.stage-number{color:var(--teal)}
+.explore-banner{border-color:color-mix(in srgb,var(--brass) 45%,var(--line));box-shadow:0 4px 14px #584a2712}
+.stage-intro{overflow:hidden;padding:24px 90px 24px 24px;border:1px solid color-mix(in srgb,var(--brass) 40%,var(--line));border-radius:17px;background:linear-gradient(90deg,var(--surface) 20%,color-mix(in srgb,var(--surface) 88%,transparent) 68%,color-mix(in srgb,var(--surface) 35%,transparent)),url('/assets/impasto/01_music_street_background.webp') center 44%/cover;box-shadow:0 5px 18px #584a2714}
+.stage-intro>.stage-number{right:22px;top:22px}
+.mission-card{border-color:color-mix(in srgb,var(--brass) 26%,var(--line));box-shadow:0 4px 14px #584a2710}
+.mission-card.current{box-shadow:0 4px 0 color-mix(in srgb,var(--teal) 13%,transparent)}
+@media(max-width:599px){
+  .home-hero .hero-description{margin-bottom:16px}
+  .street{min-height:330px;padding:11px;border-width:3px;border-radius:16px;background-position:center 49%}
+  .street-sign{font-size:9px;padding:6px 12px}
+  .street-choices{gap:6px}
+  .street-building{min-height:62px;padding:8px 6px;border-radius:9px}
+  .street-building-degree{font-size:13px}
+  .street-building-label{font-size:9px;line-height:1.35}
+  .street-building-arrow{font-size:13px;top:8px;right:6px}
+  .stage-intro{padding:20px 66px 20px 18px}
+  .stage-intro>.stage-number{right:15px;top:18px}
+}
+@media(max-width:359px){.street-building-degree{font-size:12px}.street-building-label{font-size:8px}}

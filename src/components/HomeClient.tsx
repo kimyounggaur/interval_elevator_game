@@ -9,34 +9,10 @@ import { useSettings } from "@/store/useSettings";
 import { playSequence } from "@/lib/audio";
 
 function StreetBuilding({ degree, locked = false, future = false }: { degree: number; locked?: boolean; future?: boolean }) {
-  const color = future ? "var(--ink-soft)" : degree === 3 ? "var(--teal)" : "var(--fifth)";
-  const drawing = (
-    <svg viewBox="0 0 180 224" role="img" aria-label={`${degree}도 건물${future ? ", 준비 중" : locked ? ", 잠겨 있어요" : ", 둘러보기로 가요"}`}>
-      <defs>
-        <pattern id={`bricks-${degree}`} width="34" height="18" patternUnits="userSpaceOnUse"><path d="M0 18H34M17 0V9M0 9H34M0 9V18M34 9V18" fill="none" stroke="currentColor" strokeWidth=".6" opacity=".17" /></pattern>
-        <linearGradient id={`door-${degree}`} x1="0" y1="0" x2="1" y2="0"><stop stopColor="#EDBB55"/><stop offset=".48" stopColor="#F6D98B"/><stop offset=".5" stopColor="#A67520"/><stop offset=".54" stopColor="#E7B74C"/><stop offset="1" stopColor="#D39A2C"/></linearGradient>
-      </defs>
-      <g style={{ color }}>
-        <path d="M13 210V56H29V42H42V29H138V42H151V56H167V210Z" fill="var(--surface)" stroke="currentColor" strokeWidth="2"/>
-        <path d="M18 209V59H162V209Z" fill="currentColor" opacity=".12"/>
-        <path d="M18 209V59H162V209Z" fill={`url(#bricks-${degree})`}/>
-        <path d="M8 56H172V64H8Z M24 40H156V47H24Z" fill="var(--stone)" stroke="currentColor" strokeWidth="1.5"/>
-        <path d="M37 43V31Q90 1 143 31V43Z" fill="currentColor"/>
-        <text x="90" y="34" textAnchor="middle" fill="var(--surface)" fontSize="21" fontWeight="800" fontFamily="var(--font-display)">{degree}도 건물</text>
-        {[38, 142].map(x => <g key={x}><rect x={x-10} y="78" width="20" height="35" rx="10" fill="var(--surface)" stroke="currentColor" strokeWidth="2"/><path d={`M${x} 79V112M${x-9} 96H${x+9}`} stroke="currentColor" strokeWidth="1.2"/><rect x={x-15} y="110" width="30" height="6" rx="2" fill="var(--stone)" stroke="currentColor"/><path d={`M${x-12} 109l3-7 7 5 4-6 9 8`} fill="var(--teal)" opacity=".8"/></g>)}
-        <rect x="61" y="67" width="58" height="143" fill="var(--shaft-bg)" stroke="currentColor" strokeWidth="2"/>
-        <path d="M90 69V210M63 106H117M63 144H117M63 182H117" stroke="currentColor" strokeWidth="1" opacity=".45"/>
-        <rect x="65" y={degree === 3 ? 145 : 110} width="50" height="39" rx="2" fill={future ? "var(--stone-deep)" : `url(#door-${degree})`} stroke="var(--car-edge)" strokeWidth="1.5"/>
-        <path d={`M90 ${degree === 3 ? 148 : 113}v33`} stroke="var(--car-edge)" opacity=".65"/>
-        <rect x="17" y="203" width="146" height="7" fill="var(--stone)" stroke="currentColor" strokeWidth="1.4"/>
-        <path d="M10 211H170M5 217H175" stroke="currentColor" strokeWidth="2"/>
-        {[25, 154].map(x=><g key={x}><rect x={x} y="186" width="5" height="18" fill="var(--teal)"/><circle cx={x+2} cy="182" r="12" fill="var(--teal)" opacity=".75"/><circle cx={x-3} cy="175" r="8" fill="var(--teal)" opacity=".7"/></g>)}
-      </g>
-      {(locked || future) && <g><rect x="45" y="144" width="90" height="31" rx="15" fill="var(--panel)"/><text x="90" y="164" textAnchor="middle" fill="var(--panel-ink)" fontSize="12" fontWeight="600">{future ? "준비 중" : "4단계에 열려요"}</text></g>}
-    </svg>
-  );
-  if (future || locked) return <div className={`street-building ${future ? "future" : "locked"}`}>{drawing}</div>;
-  return <Link className="street-building" href={`/explore/?degree=${degree}`} aria-label={`${degree}도 건물 둘러보기`}>{drawing}</Link>;
+  const label = future ? "준비 중" : locked ? "4단계에 열려요" : "건물 둘러보기";
+  const content = <><span className="street-building-degree">{degree}도 건물</span><span className="street-building-label">{label}</span></>;
+  if (future || locked) return <div className={`street-building ${future ? "future" : "locked"}`} aria-label={`${degree}도 건물, ${label}`}>{content}</div>;
+  return <Link className="street-building" href={`/explore/?degree=${degree}`} aria-label={`${degree}도 건물 둘러보기`}>{content}<span className="street-building-arrow" aria-hidden="true">↗</span></Link>;
 }
 
 export function HomeClient() {
@@ -68,7 +44,7 @@ export function HomeClient() {
         <p className="eyebrow">어서 와요, 음정 거리의 새 안내원님</p>
         <h1 id="home-title">음정 엘리베이터</h1>
         <p className="hero-description">도수는 건물, 성질은 층.<br className="mobile-break"/> 한 층은 반음 하나예요.</p>
-        <div className="street" aria-label="음정 거리"><StreetBuilding degree={3}/><StreetBuilding degree={5} locked={!isStageUnlocked(progress, 4)}/><StreetBuilding degree={7} future/></div>
+        <div className="street" role="group" aria-label="음정 거리의 건물"><div className="street-sign" aria-hidden="true">♪ INTERVAL STREET</div><div className="street-choices"><StreetBuilding degree={3}/><StreetBuilding degree={5} locked={!isStageUnlocked(progress, 4)}/><StreetBuilding degree={7} future/></div></div>
         <div className="street-caption"><span>악보 · 건반 · 소리가 함께 바뀌어요</span><span className="star-total" aria-label={`모은 별 ${earned}개`}>★ {earned}</span></div>
       </section>
       <section className="journey-section" aria-labelledby="journey-title">

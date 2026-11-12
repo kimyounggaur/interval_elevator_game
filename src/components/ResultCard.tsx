@@ -1,4 +1,5 @@
 import { missionById, summarize, typeLabel, type Session } from '@/engine/engine';
+import Image from 'next/image';
 
 export interface ResultCardProps {
   session: Session;
@@ -12,6 +13,7 @@ export function ResultCard({ session, onRetry, onFinish }: ResultCardProps) {
   const mistakes = [...new Set(summary.mistakes)];
   return (
     <section className="result-card" aria-labelledby="result-title">
+      <Image className="result-attendant" src="/assets/impasto/attendant_cheer.webp" width={595} height={647} alt="" aria-hidden="true" />
       <p className="eyebrow">{mission.stageId}단계 · {mission.title}</p>
       <h1 id="result-title">수고했어요!</h1>
       <div className="result-stars" aria-hidden="true">{'★'.repeat(summary.stars)}{'☆'.repeat(3 - summary.stars)}</div>

@@ -38,6 +38,7 @@ export function Building({ degree, base, floor, open, visibility = ALL_VISIBLE, 
         <strong>{visibility.buildingName ? `${degree}도 건물` : '? 건물'}</strong>
         <span>{visibility.buildingName ? (isPerfect ? '완전 계열' : '장·단 계열') : '?'}</span>
       </header>
+      {visibility.buildingName && <div className="building-art" aria-hidden="true" />}
       <div className="shaftwrap">
         <ol className="floors" style={{ gridTemplateRows: `repeat(${floors.length}, var(--row))` }}>
           {floors.map((index) => {

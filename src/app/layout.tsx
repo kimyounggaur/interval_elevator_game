@@ -3,6 +3,7 @@ import type { Metadata, Viewport } from 'next';
 import Link from 'next/link';
 import { Providers } from '@/components/Providers';
 import './globals.css';
+import './gameplay.css';
 export const metadata: Metadata = { title: '음정 엘리베이터 · 한 층은 반음 하나', description: '도수는 건물, 성질은 층. 악보와 건반, 소리를 연결해 배우는 음정 학습 게임이에요.', manifest: '/manifest.webmanifest', icons: { icon: '/icon.svg', apple: '/apple-touch-icon.png' } };
 export const viewport: Viewport = { width: 'device-width', initialScale: 1, themeColor: '#1B2A4A' };
 export default function RootLayout({ children }: Readonly<{ children: React.ReactNode }>) {
