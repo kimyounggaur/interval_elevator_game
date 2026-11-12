@@ -1,0 +1,497 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<!-- 음정 엘리베이터 둘러보기 시안 (2026-11-12). 화면 배치·색·글꼴의 기준. 앱 코드는 이 파일을 복사하지 않고 기획서 5장대로 새로 만든다. -->
+<title>음정 엘리베이터 시안</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Hahmlet:wght@600;800&family=IBM+Plex+Sans+KR:wght@400;500;600&display=swap">
+<style>
+/* 배치: 폰 세로 한 화면에 층 표시판 → (건물 | 악보) → 건반 → 이동 버튼. 넓은 화면에서는 오른쪽에 판단 메모를 둔다.
+   색의 역할: 남색 = 기준음, 청록 = 위 음, 놋쇠색 = 엘리베이터가 서 있는 층. */
+:root{
+  --ground:#F7F2E6; --surface:#FFFDF7; --ink:#1B2A4A; --ink-soft:#5A6580; --line:#DAD1BC;
+  --teal:#2C7A71; --teal-deep:#1E5B54; --on-teal:#FFFDF7;
+  --upper:#1E6B62; --on-upper:#FFFDF7;
+  --brass:#D39A2C; --brass-bright:#EDBB55; --brass-wash:#FAECB8; --on-brass:#1B2A4A; --car-edge:#7A5410;
+  --stone:#F1EBDD; --stone-deep:#E2DAC7; --shaft-bg:#CFC6B1; --cable:#A79D86; --locked:#857D69;
+  --panel:#1B2A4A; --panel-ink:#FDF6E3; --panel-soft:#A9B4CC; --panel-edge:#31436A;
+  --focus:#2C7A71;
+  /* 건반은 실물처럼 두 테마에서 같은 색을 쓴다 */
+  --kb-white:#FFFEF9; --kb-black:#20283A; --kb-line:#A9A08C; --kb-ink:#1B2A4A; --kb-on-dark:#F4F1E8;
+  --kb-base:#1B2A4A; --kb-base-wash:#D9DEEC; --kb-upper:#1E6B62; --kb-upper-wash:#CDE7E0;
+  --font-display:'Hahmlet','Noto Serif KR','AppleMyungjo','Batang',serif;
+  --font-body:'IBM Plex Sans KR','Apple SD Gothic Neo','Malgun Gothic','Noto Sans KR',system-ui,sans-serif;
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    --ground:#0F1626; --surface:#172238; --ink:#EEF1F8; --ink-soft:#A3AEC6; --line:#2B3956;
+    --teal:#3E9E91; --teal-deep:#62BBAE; --on-teal:#0C1422;
+    --upper:#74CDBF; --on-upper:#0C1422;
+    --brass:#E0A93B; --brass-bright:#F3C769; --brass-wash:#453610; --on-brass:#1B2A4A; --car-edge:#6B4A0E;
+    --stone:#1C2740; --stone-deep:#141D32; --shaft-bg:#0D1424; --cable:#3B4A6B; --locked:#7C88A3;
+    --panel:#0A1120; --panel-ink:#FBEFC8; --panel-soft:#8F9BB6; --panel-edge:#2B3956;
+    --focus:#74CDBF;
+    color-scheme: dark;
+  }
+}
+:root[data-theme="dark"]{
+  --ground:#0F1626; --surface:#172238; --ink:#EEF1F8; --ink-soft:#A3AEC6; --line:#2B3956;
+  --teal:#3E9E91; --teal-deep:#62BBAE; --on-teal:#0C1422;
+  --upper:#74CDBF; --on-upper:#0C1422;
+  --brass:#E0A93B; --brass-bright:#F3C769; --brass-wash:#453610; --on-brass:#1B2A4A; --car-edge:#6B4A0E;
+  --stone:#1C2740; --stone-deep:#141D32; --shaft-bg:#0D1424; --cable:#3B4A6B; --locked:#7C88A3;
+  --panel:#0A1120; --panel-ink:#FBEFC8; --panel-soft:#8F9BB6; --panel-edge:#2B3956;
+  --focus:#74CDBF;
+  color-scheme: dark;
+}
+
+*{box-sizing:border-box}
+body{
+  background:var(--ground); color:var(--ink);
+  font-family:var(--font-body); font-size:14px; line-height:1.5;
+  padding-left:max(16px, env(safe-area-inset-left, 0px));
+  padding-right:max(16px, env(safe-area-inset-right, 0px));
+  padding-block:12px 32px;
+  -webkit-text-size-adjust:100%;
+}
+button{font:inherit; color:inherit; touch-action:manipulation; -webkit-tap-highlight-color:transparent}
+:focus-visible{outline:2.5px solid var(--focus); outline-offset:2px}
+.sr{position:absolute; width:1px; height:1px; overflow:hidden; clip-path:inset(50%); white-space:nowrap}
+
+.page{max-width:880px; margin:0 auto; display:grid; grid-template-columns:minmax(0,1fr); gap:24px}
+@media (min-width:800px){
+  .page{grid-template-columns:minmax(0,400px) minmax(0,1fr); gap:40px; align-items:start}
+}
+.app{display:flex; flex-direction:column; gap:10px; min-width:0}
+
+/* 머리말 */
+.top{display:flex; align-items:baseline; justify-content:space-between; gap:4px 10px; flex-wrap:wrap}
+.top h1{margin:0; font-family:var(--font-display); font-weight:800; font-size:20px; line-height:1.25; letter-spacing:-.01em}
+.top p{margin:0; font-size:12px; color:var(--ink-soft)}
+
+/* 층 표시판: 건물·층·음정·간격을 늘 함께 보여 준다 */
+.plate{display:grid; grid-template-columns:.8fr .8fr 1.35fr 1fr; background:var(--panel); color:var(--panel-ink); border:1px solid var(--panel-edge); border-radius:10px; overflow:hidden}
+.plate .cell{display:flex; flex-direction:column; gap:1px; min-width:0; padding:6px 9px 7px; border-left:1px solid var(--panel-edge)}
+.plate .cell:first-child{border-left:0}
+.plate .k{font-size:10.5px; letter-spacing:.08em; color:var(--panel-soft)}
+.plate .v{font-family:var(--font-display); font-weight:800; font-size:18px; line-height:1.2; white-space:nowrap; font-variant-numeric:tabular-nums}
+.plate .name .v{color:var(--brass-bright)}
+
+/* 건물과 악보 */
+.stage{display:grid; grid-template-columns:minmax(146px,.92fr) minmax(0,1fr); gap:10px; align-items:stretch}
+.building{--row:58px; --shaft-w:34px; display:flex; flex-direction:column; align-self:start; min-width:0; background:var(--stone); border:2px solid var(--teal-deep); border-radius:12px 12px 4px 4px; overflow:hidden}
+.plaque{display:flex; flex-direction:column; align-items:center; padding:6px 6px 7px; background:var(--teal); color:var(--on-teal); line-height:1.25}
+.plaque strong{font-family:var(--font-display); font-weight:800; font-size:16px}
+.plaque span{font-size:11px; opacity:.92}
+.shaftwrap{position:relative}
+.shaftwrap::before{content:""; position:absolute; inset:0 auto 0 0; width:var(--shaft-w); background:var(--shaft-bg); border-right:2px solid var(--teal-deep)}
+.shaftwrap::after{content:""; position:absolute; top:0; bottom:0; left:calc(var(--shaft-w) / 2 - 1px); width:2px; background:var(--cable)}
+.floors{list-style:none; margin:0; padding:0; display:grid; grid-template-rows:repeat(4, var(--row))}
+.floor{display:flex; align-items:center; gap:5px; min-width:0; padding:0 6px 0 calc(var(--shaft-w) + 8px); border-top:1px solid var(--line); font-size:13px; transition:background-color .2s}
+.floor:first-child{border-top:0}
+.floor .num{min-width:2.3em; font-size:10.5px; font-weight:600; color:var(--ink-soft); font-variant-numeric:tabular-nums}
+.floor .nm{font-family:var(--font-display); font-weight:800; font-size:15.5px; white-space:nowrap}
+.floor .st{margin-left:auto; min-width:19px; height:19px; padding:0 4px; display:grid; place-items:center; border-radius:10px; border:1px solid var(--line); background:var(--surface); color:var(--ink-soft); font-size:11px; line-height:1; font-variant-numeric:tabular-nums; white-space:nowrap}
+.floor.under{background:var(--stone-deep)}
+.floor.ground{border-top:3px solid var(--teal-deep)}
+.floor.current{background:var(--brass-wash)}
+.floor.current .st{background:var(--brass); border-color:var(--brass); color:var(--on-brass); font-weight:600}
+.floor.locked .num, .floor.locked .nm{color:var(--locked)}
+.floor.locked .st{background:transparent; border-style:dashed; color:var(--locked); font-size:10px}
+.car{position:absolute; z-index:2; left:4px; top:4px; width:calc(var(--shaft-w) - 8px); height:calc(var(--row) - 8px); border-radius:4px; border:1.5px solid var(--car-edge); background:linear-gradient(180deg, var(--brass-bright), var(--brass)); transform:translateY(calc(var(--row) * var(--r, 3))); transition:transform .34s cubic-bezier(.3,.8,.25,1)}
+.car::after{content:""; position:absolute; top:3px; bottom:3px; left:50%; width:1.5px; margin-left:-.75px; background:var(--car-edge); opacity:.7}
+.cap{margin:0; padding:4px 7px 5px; border-top:1px solid var(--line); font-size:10.5px; color:var(--ink-soft); text-align:right}
+
+.score{display:flex; flex-direction:column; gap:8px; min-width:0}
+.staff{position:relative; padding:6px 6px 3px; background:var(--surface); border:1px solid var(--line); border-radius:10px}
+.staff > svg{display:block; width:100%; height:auto}
+.rare{position:absolute; top:-9px; right:8px; padding:2px 7px 3px; border-radius:9px; border:1px solid var(--line); background:var(--brass-wash); font-size:10.5px; font-weight:600; line-height:1.25; white-space:nowrap}
+.sl{stroke:var(--ink-soft); stroke-width:1.3}
+.ll{stroke:var(--ink); stroke-width:1.6}
+.clef{fill:var(--ink)}
+.nb{fill:var(--ink)}
+.nu{fill:var(--upper)}
+.acc-g{animation:fadein .3s ease-out}
+@keyframes fadein{from{opacity:0} to{opacity:1}}
+.count{display:flex; align-items:center; gap:4px; flex-wrap:wrap; margin:0; font-size:12.5px}
+.step{display:flex; flex-direction:column; align-items:center; width:27px; padding:3px 0 2px; border:1px solid var(--line); border-radius:6px; background:var(--surface); font-weight:600; line-height:1.2}
+.step i{font-style:normal; font-weight:400; font-size:10px; color:var(--ink-soft)}
+.step.b{border-color:var(--ink)}
+.step.u{border-color:var(--upper); color:var(--upper)}
+.count .eq{margin-left:3px; font-weight:600}
+.say{flex:1; margin:0; min-height:82px; padding:6px 8px 7px; border-radius:9px; background:var(--stone); font-size:12.5px; line-height:1.4}
+.say b{font-weight:600}
+.listen{display:grid; grid-template-columns:1fr 1fr; gap:6px}
+.btn{min-height:40px; display:flex; align-items:center; justify-content:center; gap:6px; padding:4px 4px; border-radius:9px; border:1.5px solid var(--ink); background:var(--surface); font-weight:600; font-size:13px; cursor:pointer}
+.btn svg{flex:none; width:11px; height:12px; fill:currentColor}
+
+/* 건반 */
+.keys{padding:6px 8px; background:var(--surface); border:1px solid var(--line); border-radius:10px}
+.kb{position:relative; padding:24px 0}
+.kb > svg{display:block; width:100%; height:auto}
+.kbnote{position:absolute; right:1px; bottom:3px; font-size:11px; line-height:1.3; color:var(--ink-soft); white-space:nowrap}
+.wk{fill:var(--kb-white); stroke:var(--kb-line); stroke-width:1}
+.wk.kb-b{fill:var(--kb-base-wash)}
+.wk.kb-u{fill:var(--kb-upper-wash)}
+.bk{fill:var(--kb-black)}
+.bk.kb-u{fill:var(--kb-upper)}
+.pip{fill:var(--kb-white); stroke:var(--kb-line); stroke-width:1}
+.pip.onb{fill:none; stroke:var(--kb-on-dark); stroke-opacity:.5}
+.pip.last{fill:var(--kb-upper); stroke:none}
+.pip.last.onb{fill:var(--kb-white); stroke:none}
+.pipt{font-family:var(--font-body); font-weight:600; font-size:9px; text-anchor:middle; fill:var(--kb-ink)}
+.pipt.onb{fill:var(--kb-on-dark)}
+.pipt.last{fill:var(--kb-white)}
+.pipt.last.onb{fill:var(--kb-upper)}
+.pip-b{fill:var(--kb-base)}
+.tag{position:absolute; transform:translateX(-50%); display:inline-flex; align-items:center; gap:4px; padding:3px 8px 4px; border-radius:10px; font-size:12.5px; font-weight:600; line-height:1; white-space:nowrap}
+.tag small{font-size:10px; font-weight:500; opacity:.88}
+.tag.u{top:0; background:var(--upper); color:var(--on-upper)}
+.tag.b{bottom:0; background:var(--ink); color:var(--ground)}
+.nt{white-space:nowrap}
+.acc{display:inline-block; vertical-align:-.17em; margin-left:.05em; fill:currentColor}
+
+/* 이동 버튼 */
+.moves{display:grid; grid-template-columns:1fr 1fr; gap:10px}
+.move{min-height:58px; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:2px; padding:6px 8px; border-radius:12px; border:2px solid var(--car-edge); background:linear-gradient(180deg, var(--brass-bright), var(--brass)); color:var(--on-brass); font-weight:600; font-size:15px; line-height:1.3; cursor:pointer}
+.move .lbl{display:inline-flex; align-items:center; gap:8px}
+.move svg{flex:none; width:13px; height:12px; fill:currentColor}
+.move .why{font-size:11px; font-weight:500; line-height:1.2}
+.move .why:empty{display:none}
+.move:disabled{background:var(--stone); border:2px dashed var(--line); color:var(--locked); cursor:not-allowed}
+.btn:active, .move:not(:disabled):active, .seg button:active{transform:translateY(1px)}
+
+/* 바꿔 보기 */
+.setup{display:grid; gap:10px; margin-top:4px; padding-top:12px; border-top:1px dashed var(--line)}
+.setup h2{margin:0; font-size:12px; font-weight:600; letter-spacing:.06em; color:var(--ink-soft)}
+.row{display:grid; grid-template-columns:50px minmax(0,1fr); gap:8px; align-items:center}
+.lab{font-size:12.5px; font-weight:600}
+.seg{display:grid; grid-auto-flow:column; grid-auto-columns:minmax(0,1fr); gap:4px}
+.seg button{min-height:44px; display:flex; flex-direction:column; align-items:center; justify-content:center; padding:2px; border-radius:8px; border:1.5px solid var(--line); background:var(--surface); font-weight:600; line-height:1.2; cursor:pointer}
+.seg button small{font-size:10.5px; font-weight:400; color:var(--ink-soft)}
+.seg button[aria-pressed="true"]{background:var(--ink); border-color:var(--ink); color:var(--ground)}
+.seg button[aria-pressed="true"] small{color:inherit; opacity:.8}
+.switch{display:flex; align-items:center; gap:8px; min-height:32px; font-size:13px}
+.switch input{width:18px; height:18px; margin:0; accent-color:var(--teal)}
+
+/* 판단 메모 */
+.notes{max-width:46ch; font-size:14px; line-height:1.65}
+.notes h2{margin:0 0 8px; font-family:var(--font-display); font-weight:800; font-size:16px; text-wrap:balance}
+.notes ul{display:grid; gap:9px; margin:0 0 22px; padding-left:1.15em}
+.notes b{font-weight:600}
+.notes p{margin:0 0 22px}
+.notes .credit{margin:0; font-size:11.5px; color:var(--ink-soft)}
+@media (min-width:800px){ .notes{padding-top:44px} }
+
+@media (prefers-reduced-motion: reduce){
+  .car, .floor{transition:none}
+  .acc-g{animation:none}
+}
+</style>
+
+</head>
+<body>
+<div class="page">
+  <main class="app">
+    <header class="top">
+      <h1>음정 엘리베이터</h1>
+      <p>둘러보기 시안 · 3도 건물</p>
+    </header>
+
+    <section class="plate" aria-label="지금 위치">
+      <div class="cell"><span class="k">건물</span><span class="v" id="p-building">3도</span></div>
+      <div class="cell"><span class="k">층</span><span class="v" id="p-floor">1층</span></div>
+      <div class="cell name"><span class="k">음정</span><span class="v" id="p-name">단3도</span></div>
+      <div class="cell"><span class="k">간격</span><span class="v" id="p-semi">3반음</span></div>
+    </section>
+
+    <section class="stage">
+      <div class="building">
+        <div class="plaque"><strong>3도 건물</strong><span>장·단 계열</span></div>
+        <div class="shaftwrap">
+          <ol class="floors" id="floors"></ol>
+          <div class="car" id="car" aria-hidden="true"></div>
+        </div>
+        <p class="cap">오른쪽 숫자는 반음 수</p>
+      </div>
+      <div class="score">
+        <div class="staff" id="staff"></div>
+        <p class="count" id="count"></p>
+        <p class="say" id="say" aria-live="polite"></p>
+        <div class="listen">
+          <button type="button" class="btn" id="btn-seq" aria-label="두 음을 차례로 듣기"><svg viewBox="0 0 11 12" aria-hidden="true"><path d="M0 0l11 6L0 12z"/></svg>차례로</button>
+          <button type="button" class="btn" id="btn-tog" aria-label="두 음을 함께 듣기"><svg viewBox="0 0 11 12" aria-hidden="true"><path d="M0 0l11 6L0 12z"/></svg>함께</button>
+        </div>
+      </div>
+    </section>
+
+    <section class="keys" aria-label="건반">
+      <div class="kb" id="kb"></div>
+    </section>
+
+    <div class="moves">
+      <button type="button" class="move" id="btn-down"><span class="lbl"><svg viewBox="0 0 13 12" aria-hidden="true"><path d="M0 1h13L6.5 12z"/></svg>한 층 아래로</span><span class="why" id="why-down"></span></button>
+      <button type="button" class="move" id="btn-up"><span class="lbl"><svg viewBox="0 0 13 12" aria-hidden="true"><path d="M0 11h13L6.5 0z"/></svg>한 층 위로</span><span class="why" id="why-up"></span></button>
+    </div>
+
+    <section class="setup" aria-label="바꿔 보기">
+      <h2>바꿔 보기</h2>
+      <div class="row">
+        <span class="lab" id="lab-base">기준음</span>
+        <div class="seg" id="seg-base" role="group" aria-labelledby="lab-base"></div>
+      </div>
+      <div class="row">
+        <span class="lab" id="lab-range">열린 층</span>
+        <div class="seg" id="seg-range" role="group" aria-labelledby="lab-range">
+          <button type="button" id="range-two" data-range="two">두 층<small>단·장</small></button>
+          <button type="button" id="range-four" data-range="four">네 층<small>감~증</small></button>
+        </div>
+      </div>
+      <label class="switch" for="snd"><input type="checkbox" id="snd" checked>층을 옮길 때 소리 내기</label>
+    </section>
+  </main>
+
+  <aside class="notes">
+    <h2>확정된 것</h2>
+    <ul>
+      <li><b>층 번호</b> 기획 PDF 안대로 B1·1층·2층·3층이고 0층은 없습니다. 성질 이름을 크게, 층 번호를 작게 보여 줍니다.</li>
+      <li><b>처음 열 층</b> 1층 단3도와 2층 장3도입니다. 지하 1층과 3층은 3단계에서 열립니다.</li>
+      <li><b>학습 순서</b> 단·장 → 기준음 바꾸기 → 감·증 → 5도 건물과 두 건물 비교.</li>
+      <li><b>겹감·겹증</b> 첫 버전에서는 건물에 그리지 않습니다. 계산은 엔진에 들어 있습니다.</li>
+    </ul>
+    <h2>시안에 없는 것</h2>
+    <p>층 맞히기, 손님 모시기 같은 문제 풀이와 진행 기록, 5도 건물은 앱에서 만듭니다. 이 화면은 둘러보기의 배치와 조작감을 보여 주고, 소리는 간단한 합성음입니다.</p>
+    <p class="credit">악보 기호는 Bravura 글꼴의 외곽선을 썼습니다. SIL Open Font License 1.1, © Steinberg Media Technologies GmbH.</p>
+  </aside>
+</div>
+
+<script id="engine">
+/* 음정 계산: 도수로 위 음의 문자와 옥타브를 먼저 정하고, 필요한 반음 간격에 맞춰 임시표를 정한다. */
+const IE = (() => {
+  const LETTERS = ['C','D','E','F','G','A','B'];
+  const PC = {C:0, D:2, E:4, F:5, G:7, A:9, B:11};
+  const BASE_SEMIS = {1:0, 2:2, 3:4, 4:5, 5:7, 6:9, 7:11, 8:12};   // 장음정·완전음정의 반음 수
+  const PERFECT = [1, 4, 5, 8];
+  const FLOORS = {
+    mm: [ {q:'겹감', off:-3, floor:'B2'}, {q:'감', off:-2, floor:'B1'}, {q:'단', off:-1, floor:'1층'},
+          {q:'장', off:0, floor:'2층'}, {q:'증', off:1, floor:'3층'}, {q:'겹증', off:2, floor:'4층'} ],
+    p:  [ {q:'겹감', off:-2, floor:'B2'}, {q:'감', off:-1, floor:'B1'}, {q:'완전', off:0, floor:'1층'},
+          {q:'증', off:1, floor:'2층'}, {q:'겹증', off:2, floor:'3층'} ]
+  };
+  const family = degree => PERFECT.includes(degree) ? 'p' : 'mm';
+  const floorsOf = degree => FLOORS[family(degree)];
+  function upper(base, degree, floorIdx){
+    const f = floorsOf(degree)[floorIdx];
+    const i = LETTERS.indexOf(base.letter) + degree - 1;
+    const letter = LETTERS[i % 7], octave = base.octave + Math.floor(i / 7);
+    const natural = (PC[letter] + 12 * octave) - (PC[base.letter] + 12 * base.octave);
+    const semis = BASE_SEMIS[degree] + f.off;
+    return {letter, acc: semis - natural + base.acc, octave, semis, quality: f.q, floor: f.floor};
+  }
+  const midi = n => 12 * (n.octave + 1) + PC[n.letter] + n.acc;
+  return {LETTERS, PC, family, floorsOf, upper, midi};
+})();
+</script>
+
+<script>
+const GLYPH = {"gClef":{"d":"M376 415C374 427 376 428 382 434C398 449 419 470 438 491C522 583 572 702 572 815C572 902 548 988 507 1048C492 1070 466 1098 455 1098C441 1098 410 1072 390 1050C316 968 292 843 292 739C292 681 299 616 306 575C308 563 309 561 297 551C233 498 164 437 112 373C43 287 0 194 0 87C0 -87 119 -252 364 -252C387 -252 413 -250 433 -246C444 -244 446 -243 448 -255C460 -322 475 -409 475 -456C475 -604 375 -622 316 -622C262 -622 236 -606 236 -593C236 -586 245 -583 268 -576C299 -567 335 -540 335 -482C335 -427 300 -380 239 -380C172 -380 132 -433 132 -495C132 -560 171 -658 322 -658C389 -658 519 -628 519 -458C519 -401 501 -306 490 -244C488 -232 489 -233 503 -227C604 -187 671 -102 671 11C671 139 577 252 430 252C404 252 404 252 401 270ZM470 943C503 943 530 916 530 861C530 792 497 728 419 650C403 634 379 611 356 591C349 585 345 586 343 599C339 625 337 659 337 691C337 847 409 943 470 943ZM361 262C364 243 364 244 346 238C258 208 201 129 201 44C201 -46 248 -110 316 -133C324 -136 336 -139 343 -139C351 -139 355 -134 355 -128C355 -121 347 -118 340 -115C298 -97 268 -54 268 -8C268 49 307 92 368 109C384 113 386 112 388 101L438 -197C440 -208 439 -208 424 -211C408 -214 388 -216 368 -216C193 -216 80 -119 80 20C80 79 90 158 173 252C233 319 279 356 326 394C336 402 338 401 340 390ZM430 103C428 115 429 118 441 117C522 110 589 42 589 -46C589 -109 551 -160 495 -188C483 -194 481 -194 479 -182Z","w":671},"whole":{"d":"M216 125C83 125 0 70 0 2C0 -65 57 -125 206 -125C370 -125 422 -68 422 2C422 73 309 125 216 125ZM111 63C122 98 159 103 190 103C259 103 314 29 314 -31C314 -38 313 -44 312 -50C307 -75 293 -92 268 -98C258 -101 247 -102 237 -102C228 -102 220 -101 211 -98C194 -93 178 -84 164 -72C156 -65 149 -58 143 -50C123 -27 108 7 108 39C108 47 109 55 111 63Z","w":422},"flat":{"d":"M12 -170C15 -174 18 -175 21 -175C24 -175 27 -173 27 -173C57 -156 81 -129 106 -112C195 -50 226 11 226 57C226 114 182 150 136 153C129 153 122 152 115 150C104 147 92 143 81 136C75 131 64 122 59 122C57 122 56 122 54 123C47 126 43 133 43 140C44 162 50 402 50 422C50 433 41 439 31 439C17 439 1 429 0 411C0 411 4 -160 12 -170ZM47 -81C47 -81 44 -21 44 19C44 35 45 47 46 51C50 63 76 85 90 93C99 98 108 100 116 100C126 100 135 96 141 89C151 78 157 61 157 42C157 24 152 3 140 -18C127 -42 98 -74 68 -93C64 -95 61 -96 58 -96C49 -96 47 -86 47 -81Z","w":226},"sharp":{"d":"M237 118C244 121 249 129 249 135V206C249 211 246 214 242 214C240 214 239 214 237 213C237 213 217 205 212 204C205 204 198 209 198 217V339C198 345 192 350 184 350C174 350 168 345 168 339V209C167 199 164 186 155 180C143 173 109 159 92 155C83 155 80 167 80 175V295C80 301 73 306 66 306C56 306 50 301 50 295V160C50 146 44 136 38 133C32 130 12 122 12 122C5 120 0 112 0 106V35C0 29 3 26 8 26C9 26 11 27 12 27C12 27 27 33 34 37C35 37 36 38 37 38C44 38 50 28 50 20V-79C50 -90 45 -99 39 -102C33 -104 12 -113 12 -113C5 -115 0 -123 0 -129V-200C0 -206 3 -209 8 -209C9 -209 11 -208 12 -208C12 -208 26 -202 35 -199C36 -198 37 -198 38 -198C45 -198 50 -209 50 -214V-337C50 -343 56 -348 63 -348C73 -348 80 -343 80 -337V-198C80 -185 85 -178 90 -176L151 -151C152 -151 154 -150 155 -150C163 -150 168 -162 168 -168V-293C168 -299 174 -304 181 -304C192 -304 198 -299 198 -293V-151C198 -143 202 -131 209 -128C216 -125 237 -117 237 -117C244 -114 249 -106 249 -100V-29C249 -24 246 -21 242 -21C240 -21 239 -21 237 -22L211 -32C205 -32 198 -26 198 -14V79C198 86 203 105 211 108ZM168 -45C162 -65 115 -85 92 -85C86 -85 81 -83 80 -80C78 -76 77 -54 77 -30C77 1 78 36 80 44C82 61 128 82 153 82C160 82 166 80 168 76C170 71 172 46 172 19C172 -8 170 -36 168 -45Z","w":249},"dsharp":{"d":"M190 -32C179 -26 143 -6 143 1C143 15 176 30 190 35C194 35 198 34 202 34C218 34 233 38 240 44C245 49 247 64 247 80C247 97 244 115 240 120C236 125 220 127 203 127C185 127 167 125 162 120C158 117 157 99 157 81C152 70 136 34 124 34C110 34 94 67 90 81C90 98 87 116 82 120C78 125 62 127 46 127C29 127 11 125 5 120C2 118 0 101 0 83C0 65 2 47 5 44C12 38 30 34 47 34C51 34 54 35 57 35C68 29 104 9 104 2C104 -11 72 -27 58 -32H48C30 -32 11 -34 5 -39C2 -42 0 -59 0 -77C0 -95 2 -113 5 -115C12 -121 28 -125 45 -125C60 -125 76 -122 82 -115C88 -110 90 -93 90 -77C90 -76 91 -74 92 -73C98 -59 110 -31 123 -31C136 -31 153 -63 157 -77C157 -95 158 -112 162 -115C169 -121 185 -125 202 -125C218 -125 233 -122 240 -115C245 -110 247 -95 247 -79C247 -62 244 -44 240 -39C235 -34 217 -32 200 -32Z","w":247},"dflat":{"d":"M314 151C309 151 305 151 300 150C288 147 277 141 267 135C260 131 252 122 243 122C241 122 239 122 238 123C231 125 228 132 228 140C228 161 234 402 234 421C234 432 225 437 215 437C202 437 186 428 184 411C184 411 185 274 187 135C172 145 155 151 136 151H130C125 151 120 151 116 150C104 147 93 141 83 135C75 131 68 122 59 122C57 122 56 122 54 123C47 125 43 132 43 140C43 161 50 402 50 421C50 432 41 437 31 437C17 437 1 428 0 411C0 411 5 -161 12 -170C15 -174 18 -175 21 -175C24 -175 27 -173 27 -173C58 -157 83 -129 106 -112C143 -86 171 -59 190 -35C192 -110 194 -167 197 -170C200 -174 203 -175 205 -175C208 -175 211 -173 211 -173C242 -157 266 -129 289 -113C379 -50 411 11 411 57C411 113 367 150 320 151ZM141 -18C128 -42 99 -73 67 -93C64 -95 60 -96 58 -96C50 -96 47 -86 47 -80C47 -80 44 -21 44 18C44 34 45 46 46 50C50 63 77 85 91 93C100 98 109 100 117 100C127 100 135 97 141 90C151 78 157 61 157 41C157 23 152 2 141 -18ZM324 -18C312 -42 283 -73 251 -93C247 -95 244 -96 242 -96C234 -96 231 -86 231 -80C231 -80 228 -11 228 27C228 38 228 47 229 50C233 63 260 85 275 93C284 98 293 100 301 100C311 100 319 97 325 90C334 78 340 61 340 41C340 23 335 3 324 -18Z","w":411},"tsharp":{"d":"M237 118C244 121 249 129 249 135V206C249 211 246 214 242 214C240 214 239 214 237 213C237 213 217 205 212 204C205 204 198 209 198 217V339C198 345 192 350 184 350C174 350 168 345 168 339V209C167 199 164 186 155 180C143 173 109 159 92 155C83 155 80 167 80 175V295C80 301 73 306 66 306C56 306 50 301 50 295V160C50 146 44 136 38 133C32 130 12 122 12 122C5 120 0 112 0 106V35C0 29 3 26 8 26C9 26 11 27 12 27C12 27 27 33 34 37C35 37 36 38 37 38C44 38 50 28 50 20V-79C50 -90 45 -99 39 -102C33 -104 12 -113 12 -113C5 -115 0 -123 0 -129V-200C0 -206 3 -209 8 -209C9 -209 11 -208 12 -208C12 -208 26 -202 35 -199C36 -198 37 -198 38 -198C45 -198 50 -209 50 -214V-337C50 -343 56 -348 63 -348C73 -348 80 -343 80 -337V-198C80 -185 85 -178 90 -176L151 -151C152 -151 154 -150 155 -150C163 -150 168 -162 168 -168V-293C168 -299 174 -304 181 -304C192 -304 198 -299 198 -293V-151C198 -143 202 -131 209 -128C216 -125 237 -117 237 -117C244 -114 249 -106 249 -100V-29C249 -24 246 -21 242 -21C240 -21 239 -21 237 -22L211 -32C205 -32 198 -26 198 -14V79C198 86 203 105 211 108ZM456 -32C445 -26 409 -6 409 1C409 15 442 30 456 35C460 35 464 34 468 34C484 34 499 38 506 44C511 49 513 64 513 80C513 97 510 115 506 120C502 125 486 127 469 127C451 127 433 125 428 120C424 117 423 99 423 81C418 70 402 34 390 34C376 34 360 67 356 81C356 98 353 116 348 120C344 125 328 127 312 127C295 127 277 125 271 120C268 118 266 101 266 83C266 65 268 47 271 44C278 38 296 34 313 34C317 34 320 35 323 35C334 29 370 9 370 2C370 -11 338 -27 324 -32H314C296 -32 277 -34 271 -39C268 -42 266 -59 266 -77C266 -95 268 -113 271 -115C278 -121 294 -125 311 -125C326 -125 342 -122 348 -115C354 -110 356 -93 356 -77C356 -76 357 -74 358 -73C364 -59 376 -31 389 -31C402 -31 419 -63 423 -77C423 -95 424 -112 428 -115C435 -121 451 -125 468 -125C484 -125 499 -122 506 -115C511 -110 513 -95 513 -79C513 -62 510 -44 506 -39C501 -34 483 -32 466 -32ZM168 -45C162 -65 115 -85 92 -85C86 -85 81 -83 80 -80C78 -76 77 -54 77 -30C77 1 78 36 80 44C82 61 128 82 153 82C160 82 166 80 168 76C170 71 172 46 172 19C172 -8 170 -36 168 -45Z","w":513},"tflat":{"d":"M314 151C309 151 305 151 300 150C288 147 277 141 267 135C260 131 252 122 243 122C241 122 239 122 238 123C231 125 228 132 228 140C228 161 234 402 234 421C234 432 225 437 215 437C202 437 186 428 184 411C184 411 185 274 187 135C172 145 155 151 136 151H130C125 151 120 151 116 150C104 147 93 141 83 135C75 131 68 122 59 122C57 122 56 122 54 123C47 125 43 132 43 140C43 161 50 402 50 421C50 432 41 437 31 437C17 437 1 428 0 411C0 411 5 -161 12 -170C15 -174 18 -175 21 -175C24 -175 27 -173 27 -173C58 -157 83 -129 106 -112C143 -86 171 -59 190 -35C192 -110 194 -167 197 -170C200 -174 203 -175 205 -175C208 -175 211 -173 211 -173C242 -157 266 -129 289 -113C328 -86 356 -59 376 -33C377 -110 380 -167 382 -170C385 -174 388 -175 391 -175C394 -175 397 -173 397 -173C427 -156 451 -129 476 -112C565 -50 596 11 596 57C596 114 552 150 506 153C499 153 492 152 485 150C474 147 462 143 451 136C445 131 434 122 429 122C427 122 426 122 424 123C417 126 413 133 413 140C414 162 420 402 420 422C420 433 411 439 401 439C387 439 371 429 370 411C370 411 371 274 373 133C358 144 339 151 320 151ZM141 -18C128 -42 99 -73 67 -93C64 -95 60 -96 58 -96C50 -96 47 -86 47 -80C47 -80 44 -21 44 18C44 34 45 46 46 50C50 63 77 85 91 93C100 98 109 100 117 100C127 100 135 97 141 90C151 78 157 61 157 41C157 23 152 2 141 -18ZM324 -18C312 -42 283 -73 251 -93C247 -95 244 -96 242 -96C234 -96 231 -86 231 -80C231 -80 228 -11 228 27C228 38 228 47 229 50C233 63 260 85 275 93C284 98 293 100 301 100C311 100 319 97 325 90C334 78 340 61 340 41C340 23 335 3 324 -18ZM510 -18C497 -42 468 -74 438 -93C434 -95 431 -96 428 -96C419 -96 417 -86 417 -81C417 -81 414 -21 414 19C414 35 415 47 416 51C420 63 446 85 460 93C469 98 478 100 486 100C496 100 505 96 511 89C521 78 527 61 527 42C527 24 522 3 510 -18Z","w":596}};
+</script>
+
+<script>
+(() => {
+  const {LETTERS, floorsOf, midi} = IE;
+  const $ = id => document.getElementById(id);
+  const DEG = 3, FLOORS = floorsOf(DEG);
+  const RANGES = {
+    two:  {lo:2, hi:3, label:'두 층'},
+    four: {lo:1, hi:4, label:'네 층'}
+  };
+  const SHOW = [1, 4];   // 첫 버전 건물에 그리는 층: B1 감 ~ 3층 증
+  const state = {base:{letter:'C', acc:0, octave:4}, fi:2, range:'two', sound:true};
+  const up = (fi = state.fi) => IE.upper(state.base, DEG, fi);
+  const name = u => `${u.quality}${DEG}도`;
+
+  /* ── 임시표 ── */
+  const ACC_KEY = {'-3':'tflat', '-2':'dflat', '-1':'flat', '1':'sharp', '2':'dsharp', '3':'tsharp'};
+  const ACC_WORD = {'-3':'트리플 플랫', '-2':'더블 플랫', '-1':'플랫', '1':'샵', '2':'더블 샵', '3':'트리플 샵'};
+  function accInline(a){
+    if (!a) return '';
+    const g = GLYPH[ACC_KEY[a]], w = g.w + 30, h = 820, em = 1.05;
+    return `<svg class="acc" viewBox="-15 -455 ${w} ${h}" style="width:${(w / h * em).toFixed(3)}em;height:${em}em" aria-hidden="true"><path d="${g.d}" transform="scale(1 -1)"/></svg><span class="sr">${ACC_WORD[a]}</span>`;
+  }
+  const noteHTML = n => `<span class="nt">${n.letter}${accInline(n.acc)}</span>`;
+  const noteWords = n => n.letter + (n.acc ? ' ' + ACC_WORD[n.acc] : '');
+
+  /* ── 악보 ── */
+  function staffSVG(b, u){
+    const SP = 10, S = SP / 250, YB = 60, XN = 92;      // 오선 한 칸 10, 맨 아랫줄 y=60
+    const NW = GLYPH.whole.w * S, left = XN - NW / 2;
+    const pos = n => (n.octave - 4) * 7 + LETTERS.indexOf(n.letter) - 2;   // E4(맨 아랫줄) = 0
+    const y = p => YB - p * SP / 2;
+    const glyph = (key, x, yy, cls) => `<path class="${cls}" d="${GLYPH[key].d}" transform="translate(${x.toFixed(2)} ${yy}) scale(${S} ${-S})"/>`;
+    const ledgerAt = p => `<line class="ll" x1="${(left - 4).toFixed(2)}" x2="${(left + NW + 4).toFixed(2)}" y1="${y(p)}" y2="${y(p)}"/>`;
+    const ledgers = p => { let o = ''; for (let q = -2; q >= p; q -= 2) o += ledgerAt(q); for (let q = 10; q <= p; q += 2) o += ledgerAt(q); return o; };
+    const pb = pos(b), pu = pos(u);
+    let s = `<svg viewBox="0 0 124 84" role="img" aria-label="악보. 아래 음 ${noteWords(b)}, 위 음 ${noteWords(u)}">`;
+    for (let i = 0; i < 5; i++) s += `<line class="sl" x1="2" x2="122" y1="${YB - i * SP}" y2="${YB - i * SP}"/>`;
+    s += glyph('gClef', 7, YB - SP, 'clef');
+    s += ledgers(pb) + ledgers(pu);
+    s += glyph('whole', left, y(pb), 'nb') + glyph('whole', left, y(pu), 'nu');
+    if (u.acc){
+      const g = GLYPH[ACC_KEY[u.acc]];
+      const gap = (pb <= -2 && pu - pb <= 2) ? 5 : 3;     // 덧줄 옆에서는 조금 더 띄운다
+      s += glyph(ACC_KEY[u.acc], left - gap - g.w * S, y(pu), 'nu acc-g');
+    }
+    return s + '</svg>';
+  }
+
+  /* ── 건반 (C4~F5) ── */
+  function keyboardHTML(b, u){
+    const bm = midi(b), um = midi(u), LO = 60, HI = 76, W = 30, H = 64, BW = 18, BH = 40;
+    const keys = []; let wi = 0;
+    for (let m = LO; m <= HI; m++){
+      if ([1, 3, 6, 8, 10].includes(m % 12)) keys.push({m, black:true, x:wi * W - BW / 2});
+      else { keys.push({m, black:false, x:wi * W}); wi++; }
+    }
+    const total = wi * W;
+    const cx = k => k.black ? k.x + BW / 2 : k.x + W / 2;
+    const mark = k => (k.m === bm ? ' kb-b' : '') + (k.m === um ? ' kb-u' : '');
+    let s = `<svg viewBox="0 0 ${total} ${H}" role="img" aria-label="건반. 기준음 ${noteWords(b)}에서 위 음 ${noteWords(u)}까지 ${um - bm}반음">`;
+    keys.filter(k => !k.black).forEach(k => { s += `<rect class="wk${mark(k)}" x="${k.x + .5}" y=".5" width="${W - 1}" height="${H - 1}" rx="3"/>`; });
+    keys.filter(k => k.black).forEach(k => { s += `<rect class="bk${mark(k)}" x="${k.x}" y="0" width="${BW}" height="${BH}" rx="2"/>`; });
+    keys.forEach(k => {
+      const d = k.m - bm; if (d < 0 || k.m > um) return;
+      const x = cx(k), yy = k.black ? BH - 11 : H - 12;
+      if (d === 0){ s += `<circle class="pip-b" cx="${x}" cy="${yy}" r="5"/>`; return; }
+      const c = (k.m === um ? ' last' : '') + (k.black ? ' onb' : '');
+      s += `<circle class="pip${c}" cx="${x}" cy="${yy}" r="7.5"/><text class="pipt${c}" x="${x}" y="${yy}" dy=".35em">${d}</text>`;
+    });
+    s += '</svg>';
+    const at = m => { const k = keys.find(k => k.m === m); return Math.min(Math.max(cx(k) / total * 100, 12), 88).toFixed(2); };
+    const WHITE = {0:'C', 2:'D', 4:'E', 5:'F', 7:'G', 9:'A', 11:'B'};
+    const same = u.acc ? WHITE[um % 12] : null;            // 임시표가 붙었는데 흰건반에 닿는 경우
+    return `<span class="tag u" style="left:${at(um)}%"><small>위 음</small>${noteHTML(u)}</span>${s}<span class="tag b" style="left:${at(bm)}%"><small>기준음</small>${noteHTML(b)}</span>${same ? `<span class="kbnote">건반은 ${same} 자리</span>` : ''}`;
+  }
+
+  /* ── 소리 ── */
+  let ctx = null, master = null;
+  function audio(){
+    try {
+      if (!ctx){
+        const AC = window.AudioContext || window.webkitAudioContext; if (!AC) return null;
+        ctx = new AC(); master = ctx.createGain(); master.gain.value = .55;
+        const comp = ctx.createDynamicsCompressor(); master.connect(comp); comp.connect(ctx.destination);
+      }
+      if (ctx.state === 'suspended') ctx.resume();
+      return ctx;
+    } catch (e) { return null; }
+  }
+  function tone(m, when, dur){
+    const f = 440 * Math.pow(2, (m - 69) / 12);
+    const g = ctx.createGain();
+    g.gain.setValueAtTime(.0001, when);
+    g.gain.exponentialRampToValueAtTime(.45, when + .012);
+    g.gain.exponentialRampToValueAtTime(.0001, when + dur);
+    const lp = ctx.createBiquadFilter(); lp.type = 'lowpass';
+    lp.frequency.setValueAtTime(3200, when); lp.frequency.exponentialRampToValueAtTime(900, when + dur);
+    const o1 = ctx.createOscillator(); o1.type = 'triangle'; o1.frequency.value = f;
+    const o2 = ctx.createOscillator(); o2.type = 'sine'; o2.frequency.value = f * 2;
+    const g2 = ctx.createGain(); g2.gain.value = .18;
+    o1.connect(lp); o2.connect(g2); g2.connect(lp); lp.connect(g); g.connect(master);
+    o1.start(when); o2.start(when); o1.stop(when + dur + .05); o2.stop(when + dur + .05);
+  }
+  function play(kind){
+    if (!audio()) return;
+    try {
+      const t = ctx.currentTime + .03, bm = midi(state.base), um = midi(up());
+      if (kind === 'seq'){ tone(bm, t, .95); tone(um, t + .62, 1.1); }
+      else { const d = kind === 'move' ? 1.15 : 1.7; tone(bm, t, d); tone(um, t, d); }
+    } catch (e) { /* 소리가 막힌 환경에서도 화면은 그대로 쓴다 */ }
+  }
+
+  /* ── 화면 ── */
+  const say = html => { $('say').innerHTML = html; };
+  function buildFloors(){
+    let h = '';
+    for (let fi = SHOW[1]; fi >= SHOW[0]; fi--){
+      const f = FLOORS[fi], cls = (fi < 2 ? ' under' : '') + (fi === 1 ? ' ground' : '');
+      h += `<li class="floor${cls}" data-fi="${fi}"><span class="num">${f.floor}</span><span class="nm">${f.q}${DEG}도</span><span class="st"></span></li>`;
+    }
+    $('floors').innerHTML = h;
+    $('seg-base').innerHTML = LETTERS.map(l => `<button type="button" id="base-${l}" data-base="${l}">${l}</button>`).join('');
+  }
+  function render(){
+    const r = RANGES[state.range], u = up();
+    document.querySelectorAll('.floor').forEach(li => {
+      const fi = +li.dataset.fi, locked = fi < r.lo || fi > r.hi;
+      li.classList.toggle('current', fi === state.fi);
+      li.classList.toggle('locked', locked);
+      li.querySelector('.st').textContent = locked ? '잠김' : IE.upper(state.base, DEG, fi).semis;
+      if (fi === state.fi) li.setAttribute('aria-current', 'true'); else li.removeAttribute('aria-current');
+    });
+    $('car').style.setProperty('--r', SHOW[1] - state.fi);
+    $('p-floor').textContent = u.floor;
+    $('p-name').textContent = name(u);
+    $('p-semi').textContent = u.semis + '반음';
+    $('staff').innerHTML = staffSVG(state.base, u) + (Math.abs(u.acc) >= 3 ? '<span class="rare">임시표 세 개 · 드문 표기</span>' : '');
+    const bi = LETTERS.indexOf(state.base.letter);
+    $('count').innerHTML = [0, 1, 2].map(k => `<span class="step${k === 0 ? ' b' : k === 2 ? ' u' : ''}">${LETTERS[(bi + k) % 7]}<i>${k + 1}</i></span>`).join('') + `<span class="eq">세 칸 = ${DEG}도</span>`;
+    $('kb').innerHTML = keyboardHTML(state.base, u);
+    const upB = $('btn-up'), dnB = $('btn-down');
+    upB.disabled = state.fi >= r.hi; dnB.disabled = state.fi <= r.lo;
+    $('why-up').textContent = !upB.disabled ? '' : state.fi === SHOW[1] ? '건물의 맨 위층이에요' : '위층은 아직 잠겨 있어요';
+    $('why-down').textContent = !dnB.disabled ? '' : state.fi === SHOW[0] ? '건물의 맨 아래층이에요' : '아래층은 아직 잠겨 있어요';
+    document.querySelectorAll('#seg-base button').forEach(b => b.setAttribute('aria-pressed', b.dataset.base === state.base.letter));
+    document.querySelectorAll('#seg-range button').forEach(b => b.setAttribute('aria-pressed', b.dataset.range === state.range));
+  }
+  /* 안내는 악보 옆 좁은 칸에 들어가므로 짧은 줄로 끊어 쓴다 */
+  function move(dir){
+    const r = RANGES[state.range], next = state.fi + dir;
+    if (next < r.lo || next > r.hi) return;
+    const prev = up(); state.fi = next; const cur = up();
+    render();
+    say(`<b>${name(prev)} → ${name(cur)}</b><br>위 음 ${noteHTML(prev)} → ${noteHTML(cur)}<br>악보 자리는 그대로,<br>소리만 반음 ${dir > 0 ? '위로' : '아래로'}`);
+    if (state.sound) play('move');
+  }
+  function setBase(letter){
+    if (letter === state.base.letter) return;
+    state.base = {letter, acc:0, octave:4};
+    render();
+    const cur = up(), bi = LETTERS.indexOf(letter), mid = LETTERS[(bi + 1) % 7];
+    const nat = [2, 3].map(fi => IE.upper(state.base, DEG, fi)).find(x => x.acc === 0);
+    const tail = nat.floor === cur.floor ? '지금 층이 바로 그 층' : `지금 ${cur.floor} ${name(cur)}: ${letter}–${noteHTML(cur)}`;
+    say(`<b>기준음 ${letter}</b><br>${letter}·${mid}·${cur.letter} 세 칸 → 위 음 자리 ${cur.letter}<br>임시표 없이 ${letter}–${cur.letter}: ${nat.floor} ${name(nat)}<br>${tail}`);
+    if (state.sound) play('move');
+  }
+  function setRange(key){
+    if (key === state.range) return;
+    state.range = key;
+    const r = RANGES[key], before = state.fi;
+    state.fi = Math.min(Math.max(state.fi, r.lo), r.hi);
+    render();
+    const lo = FLOORS[r.lo], hi = FLOORS[r.hi];
+    say(`<b>열린 층: ${r.label}</b><br>${lo.q}${DEG}도(${lo.floor}) ~ ${hi.q}${DEG}도(${hi.floor})${before !== state.fi ? `<br>엘리베이터는 ${FLOORS[state.fi].floor}으로` : ''}`);
+  }
+
+  buildFloors();
+  render();
+  say('<b>한 층 = 반음 하나</b><br>아래 버튼으로 한 층씩<br>움직여 보세요');
+  $('btn-up').addEventListener('click', () => move(1));
+  $('btn-down').addEventListener('click', () => move(-1));
+  $('btn-seq').addEventListener('click', () => play('seq'));
+  $('btn-tog').addEventListener('click', () => play('together'));
+  $('seg-base').addEventListener('click', e => { const b = e.target.closest('button'); if (b) setBase(b.dataset.base); });
+  $('seg-range').addEventListener('click', e => { const b = e.target.closest('button'); if (b) setRange(b.dataset.range); });
+  $('snd').addEventListener('change', e => { state.sound = e.target.checked; });
+  document.addEventListener('keydown', e => {
+    if (e.target.closest && e.target.closest('input, select, textarea')) return;
+    if (e.key === 'ArrowUp'){ e.preventDefault(); move(1); }
+    if (e.key === 'ArrowDown'){ e.preventDefault(); move(-1); }
+  });
+})();
+</script>
+
+</body>
+</html>
